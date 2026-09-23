@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Saved Properties - RentalHub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="fa-solid fa-heart text-danger me-2"></i>Saved Properties</h3>
+            <p class="text-muted small mb-0">Properties you have bookmarked for quick access</p>
+        </div>
+        <a href="{% url 'properties:property_list' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fa-solid fa-magnifying-glass me-1"></i> Browse More
+        </a>
+    </div>
+
+    {% if favorites %}
+        <div class="row g-4">
+            {% for fav in favorites %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="property-card">
+                        <div class="property-card-img-wrapper">
+                            {% if fav.property.image %}
+                                <img src="{{ fav.property.image.url }}" alt="{{ fav.property.title }}" class="property-card-img">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100 bg-secondary bg-opacity-10 text-muted">
+                                    <i class="fa-solid fa-image fs-1"></i>
+                                </div>
+                            {% endif %}
+
+                            <span class="property-type-badge">{{ fav.property.get_property_type_display }}</span>
+                            <span class="property-price-tag">${{ fav.property.rent }}/mo</span>
+
+                            <a href="{% url 'properties:toggle_favorite' fav.property.pk %}" class="btn-favorite-float active" title="Remove from favorites">
+                                <i class="fa-solid fa-heart text-danger"></i>
+                            </a>
+                        </div>
+
+                        <div class="property-card-body">
+                            <h5 class="property-title">
+                                <a href="{{ fav.property.get_absolute_url }}" class="text-dark">{{ fav.property.title }}</a>
+                            </h5>
+                            <div class="property-location">
+                                <i class="fa-solid fa-location-dot text-primary me-1"></i>
+                                {{ fav.property.location }}
+                            </div>
+
+                            <div class="property-specs">
+                                <span><i class="fa-solid fa-bed text-muted"></i> {{ fav.property.bedrooms }} Beds</span>
+                                <span><i class="fa-solid fa-bath text-muted"></i> {{ fav.property.bathrooms }} Baths</span>
+                            </div>
+
+                            <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between">
+                                <small class="text-muted">Saved {{ fav.created_at|date:"M d, Y" }}</small>
+                                <a href="{{ fav.property.get_absolute_url }}" class="btn btn-sm btn-outline-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm p-5 text-center">
+            <div class="mb-3 text-muted">
+                <i class="fa-regular fa-heart fs-1 text-danger"></i>
+            </div>
+            <h4 class="fw-bold">No Saved Properties Yet</h4>
+            <p class="text-muted">Click the heart icon on any property card to save it here for later.</p>
+            <div class="mt-2">
+                <a href="{% url 'properties:property_list' %}" class="btn btn-primary">
+                    Browse Properties Now
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

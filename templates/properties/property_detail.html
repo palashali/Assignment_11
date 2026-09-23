@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ property.title }} - RentalHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb & Actions Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'properties:property_list' %}" class="text-decoration-none">Properties</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ property.title }}</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex align-items-center gap-2">
+            {% if user.is_authenticated %}
+                <a href="{% url 'properties:toggle_favorite' property.pk %}" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1">
+                    <i class="{% if is_favorited %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+                    <span>{% if is_favorited %}Saved to Favorites{% else %}Save to Favorites{% endif %}</span>
+                </a>
+            {% endif %}
+
+            {% if user == property.owner or user.is_superuser %}
+                <a href="{% url 'properties:property_update' property.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                </a>
+                <a href="{% url 'properties:property_delete' property.pk %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fa-solid fa-trash me-1"></i> Delete
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Property Overview -->
+    <div class="row g-4">
+        <!-- Left Column: Media, Details, Reviews -->
+        <div class="col-lg-8">
+            <!-- Property Hero Image Card -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div style="height: 420px; background-color: #0f172a;" class="position-relative">
+                    {% if property.image %}
+                        <img src="{{ property.image.url }}" alt="{{ property.title }}" class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-white opacity-50">
+                            <i class="fa-solid fa-mountain-city fs-1 mb-2"></i>
+                            <span>No listing image available</span>
+                        </div>
+                    {% endif %}
+
+                    <span class="position-absolute top-0 start-0 m-3 badge bg-dark bg-opacity-75 fs-6 px-3 py-2 rounded-pill">
+                        {{ property.get_property_type_display }}
+                    </span>
+
+                    <span class="position-absolute top-0 end-0 m-3 badge {% if property.is_available %}bg-success{% else %}bg-secondary{% endif %} fs-6 px-3 py-2 rounded-pill">
+                        {% if property.is_available %}<i class="fa-solid fa-circle-check me-1"></i> Available{% else %}<i class="fa-solid fa-circle-xmark me-1"></i> Unavailable{% endif %}
+                    </span>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                        <div>
+                            <h2 class="fw-bold mb-1">{{ property.title }}</h2>
+                            <p class="text-muted fs-6 mb-0">
+                                <i class="fa-solid fa-location-dot text-primary me-1"></i> {{ property.location }}
+                            </p>
+                        </div>
+                        <div class="text-lg-end">
+                            <h3 class="text-primary fw-extrabold mb-0">${{ property.rent }}</h3>
+                            <small class="text-muted">per month</small>
+                        </div>
+                    </div>
+
+                    <!-- Key Spec Grid -->
+                    <div class="row g-3 py-3 border-top border-bottom my-3 bg-light rounded-3 text-center">
+                        <div class="col-3">
+                            <div class="text-muted small">Bedrooms</div>
+                            <div class="fw-bold fs-5"><i class="fa-solid fa-bed text-primary me-1"></i> {{ property.bedrooms }}</div>
+                        </div>
+                        <div class="col-3 border-start">
+                            <div class="text-muted small">Bathrooms</div>
+                            <div class="fw-bold fs-5"><i class="fa-solid fa-bath text-primary me-1"></i> {{ property.bathrooms }}</div>
+                        </div>
+                        <div class="col-3 border-start">
+                            <div class="text-muted small">Property Type</div>
+                            <div class="fw-bold fs-6 mt-1">{{ property.get_property_type_display }}</div>
+                        </div>
+                        <div class="col-3 border-start">
+                            <div class="text-muted small">Listed</div>
+                            <div class="fw-bold fs-6 mt-1">{{ property.created_at|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <h5 class="fw-bold mt-4 mb-2">About This Property</h5>
+                    <div class="text-secondary leading-relaxed" style="white-space: pre-line;">
+                        {{ property.description }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews & Ratings Section -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 border-bottom pb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                            <span>Tenant Reviews</span>
+                            {% if property.average_rating %}
+                                <span class="badge bg-warning text-dark fs-6">
+                                    <i class="fa-solid fa-star me-1"></i>{{ property.average_rating }} / 5.0
+                                </span>
+                            {% endif %}
+                        </h4>
+                        <p class="text-muted small mb-0">{{ property.total_reviews }} authentic review{{ property.total_reviews|pluralize }} from verified tenants</p>
+                    </div>
+
+                    {% if can_review %}
+                        <button class="btn btn-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                            <i class="fa-solid fa-star me-1"></i> Leave a Review
+                        </button>
+                    {% endif %}
+                </div>
+
+                {% if reviews %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for review in reviews %}
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if review.tenant.profile_picture %}
+                                            <img src="{{ review.tenant.profile_picture.url }}" alt="{{ review.tenant.username }}" class="rounded-circle" width="36" height="36" style="object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px;">
+                                                {{ review.tenant.username|make_list|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold small">{{ review.tenant.get_full_name|default:review.tenant.username }}</div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">Verified Tenant • {{ review.created_at|date:"M d, Y" }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="star-rating-display">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                                <i class="fa-solid fa-star"></i>
+                                            {% else %}
+                                                <i class="fa-solid fa-star empty-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <p class="mb-0 text-secondary small">{{ review.comment }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-regular fa-comment-dots fs-2 mb-2 text-secondary"></i>
+                        <p class="mb-0 small">No reviews for this property yet.</p>
+                        {% if can_review %}
+                            <button class="btn btn-sm btn-outline-warning mt-2" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                                Be the first to leave a review
+                            </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Request Card & Owner Info -->
+        <div class="col-lg-4">
+            <!-- Rental Request Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 sticky-top" style="top: 85px; z-index: 5;">
+                <h5 class="fw-bold mb-3">Rental Availability</h5>
+
+                <div class="p-3 bg-light rounded-3 mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Monthly Rent</span>
+                        <strong class="text-primary">${{ property.rent }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Status</span>
+                        {% if property.is_available %}
+                            <span class="badge bg-success">Available Now</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Available</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Location</span>
+                        <span class="small fw-semibold text-end text-truncate" style="max-width: 160px;">{{ property.location }}</span>
+                    </div>
+                </div>
+
+                <!-- Action Button logic based on user status -->
+                {% if user.is_authenticated %}
+                    {% if user == property.owner %}
+                        <div class="alert alert-info small mb-0">
+                            <i class="fa-solid fa-circle-info me-1"></i> You are the owner of this property. You can manage rental requests in your <a href="{% url 'rentals:owner_dashboard' %}" class="fw-bold">Owner Dashboard</a>.
+                        </div>
+                    {% elif user.is_owner %}
+                        <div class="alert alert-secondary small mb-0">
+                            <i class="fa-solid fa-circle-info me-1"></i> You are logged in with an Owner account. Switch to or register a Tenant account to send rental requests.
+                        </div>
+                    {% elif has_pending_request %}
+                        <div class="alert alert-warning small mb-0">
+                            <i class="fa-solid fa-clock me-1"></i> You already have a <strong>Pending</strong> rental request for this property. Track it on your <a href="{% url 'rentals:tenant_dashboard' %}" class="fw-bold">Tenant Dashboard</a>.
+                        </div>
+                    {% elif has_accepted_request %}
+                        <div class="alert alert-success small mb-0">
+                            <i class="fa-solid fa-circle-check me-1"></i> Your rental request was <strong>Accepted</strong> by the owner!
+                            {% if not has_reviewed %}
+                                <div class="mt-2">
+                                    <button class="btn btn-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                                        <i class="fa-solid fa-star me-1"></i> Submit Review
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% elif property.is_available %}
+                        <button class="btn btn-primary btn-lg w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#requestModal">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Send Rental Request
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary btn-lg w-100 fw-semibold" disabled>
+                            Currently Unavailable
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-primary btn-lg w-100 fw-semibold">
+                        <i class="fa-solid fa-right-to-bracket me-2"></i> Log in to Send Request
+                    </a>
+                {% endif %}
+
+                <!-- Owner Info Box -->
+                <div class="border-top mt-4 pt-4">
+                    <h6 class="fw-bold text-muted small text-uppercase mb-3">Listed By Property Owner</h6>
+                    <div class="d-flex align-items-center gap-3">
+                        {% if property.owner.profile_picture %}
+                            <img src="{{ property.owner.profile_picture.url }}" alt="{{ property.owner.username }}" class="rounded-circle" width="48" height="48" style="object-fit: cover;">
+                        {% else %}
+                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5" style="width: 48px; height: 48px;">
+                                {{ property.owner.username|make_list|first|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold">{{ property.owner.get_full_name|default:property.owner.username }}</div>
+                            <div class="text-muted small"><i class="fa-solid fa-envelope me-1"></i>{{ property.owner.email }}</div>
+                            {% if property.owner.phone_number %}
+                                <div class="text-muted small"><i class="fa-solid fa-phone me-1"></i>{{ property.owner.phone_number }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if property.owner.bio %}
+                        <p class="small text-muted mt-2 mb-0 fst-italic">"{{ property.owner.bio }}"</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Send Rental Request -->
+{% if user.is_authenticated and user.is_tenant and can_request %}
+<div class="modal fade" id="requestModal" tabindex="-1" aria-labelledby="requestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="requestModalLabel">
+                    <i class="fa-solid fa-paper-plane me-2"></i> Send Rental Request
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'rentals:send_request' property.pk %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Property</label>
+                        <input type="text" class="form-control" value="{{ property.title }} (${{ property.rent }}/mo)" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ rental_form.message.id_for_label }}" class="form-label fw-semibold small">Message to Owner *</label>
+                        {{ rental_form.message }}
+                        <div class="form-text small">Introduce yourself, planned move-in date, occupancy, and any questions.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal: Write Review -->
+{% if can_review %}
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="reviewModalLabel">
+                    <i class="fa-solid fa-star me-2"></i> Review Property
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'reviews:add_review' property.pk %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="{{ review_form.rating.id_for_label }}" class="form-label fw-semibold small">Your Rating (1 to 5 Stars) *</label>
+                        {{ review_form.rating }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ review_form.comment.id_for_label }}" class="form-label fw-semibold small">Review Feedback *</label>
+                        {{ review_form.comment }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning fw-semibold">
+                        <i class="fa-solid fa-star me-1"></i> Submit Review
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

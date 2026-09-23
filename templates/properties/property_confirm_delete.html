@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Deletion - RentalHub{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <div class="mb-3 text-danger">
+                    <i class="fa-solid fa-triangle-exclamation fs-1"></i>
+                </div>
+                <h4 class="fw-bold mb-2">Delete Property Listing?</h4>
+                <p class="text-muted mb-4">
+                    Are you sure you want to permanently delete <strong>"{{ property.title }}"</strong>? This action cannot be undone. All related rental requests and reviews will also be removed.
+                </p>
+
+                <div class="p-3 bg-light rounded-3 text-start mb-4 border">
+                    <div class="small text-muted mb-1">Property details:</div>
+                    <div class="fw-bold">{{ property.title }}</div>
+                    <div class="small text-secondary">{{ property.location }} • ${{ property.rent }}/mo</div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{% url 'rentals:owner_dashboard' %}" class="btn btn-light border px-4">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                            <i class="fa-solid fa-trash me-1"></i> Confirm Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
